@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Particle System</title>
+	<style type="text/css">
+		body,html{
+			margin:0;
+		}
+	</style>
+	<script type="text/javascript">
+
+	//canvas setting
+	var CANVAS_WIDTH = window.innerWidth;
+	var CANVAS_HEIGHT = window.innerHeight;
+	/*
+	2 particle objects in left side and right side
+	both has 500 particles.
+	*/
+	var particlesLeft = {}, particlesRight = {};
+	var particleIndex = 0;
+	var particleNum = 500;
+	//different initial attractor position for left particles and right particles.
+	var initialAttractorPosLeft = {
+		x : CANVAS_WIDTH / 4,
+		y : CANVAS_HEIGHT / 2
+	};
+	var initialAttractorPosRight = {
+		x : 3 * CANVAS_WIDTH / 4,
+		y : CANVAS_HEIGHT / 2
+	};
+	//different current attractor position for left particles and right particles.
+	var currentAttractorPosLeft = initialAttractorPosLeft;
+	var currentAttractorPosRight = initialAttractorPosRight;
+
+	//particle color
+	var particleColor;
+
+	/*
+	particle definition
+	2 parameters: object: particles, variable: offset
+	every particle will add into given particles object.
+	offset provides the offset in x position
+	*/
+	var Particle = function(particles, offset){
+		//position
+		this.px = Math.random() * CANVAS_WIDTH / 2 + offset;
+		this.py = Math.random() * CANVAS_HEIGHT;
+		//velocity
+		this.vx = 1;
+		this.vy = 1 ;
+		//increment particleIndex
+		this.id = particleIndex;
+		particles[particleIndex] = this;	
+	}
+	/*
+	change velocity per frame
+	velocity is changed according to the attractor's position
+	*/
+	Particle.prototype.addVelocity = function(attractor){
+		//calculate attractor's force direction
+		var dirX = attractor.x - this.px;
+		var dirY = attractor.y - this.py;
+		var len = Math.sqrt(dirX * dirX + dirY * dirY);
+
+		if(len < 100){
+			var theta = Math.random() * 2 * Math.PI;
+			dirX = Math.cos(theta);
+			dirY = Math.sin(theta);
+			this.vx += dirX;
+			this.vy += dirY;
+		}
+		else{
+			var velocity = Math.exp(-len/100);
+			if(len > 500 && len <= 1000){
+				velocity = Math.exp(-len/150);
+			}
+			else if(len > 1000){
+				velocity = Math.exp(-len/200);
+			}
+			this.vx = velocity * dirX;
+			this.vy = velocity * dirY;
+		} 
+	}
+	//if a particle collides the boundary, reset its position and velocity.
+	Particle.prototype.detectCollision = function(){
+		this.px += this.vx;
+		this.py += this.vy;
+		if(this.px < 0){
+			this.px = 0;
+			this.vx = -0.5 * this.vx;
+		}
+		else if(this.px > CANVAS_WIDTH){
+			this.px = CANVAS_WIDTH;
+			this.vx = -0.5 * this.vx;
+		}
+
+		if(this.py < 0){
+			this.py = 0;
+			this.vy = -0.5 * this.vy;
+		}
+		else if(this.py > CANVAS_HEIGHT){
+			this.py = CANVAS_HEIGHT;
+			this.vy = -0.5 * this.vy;
+		}
+
+	}
+	//draw particle
+	Particle.prototype.draw = function(context){		
+		context.fillStyle = particleColor;
+		context.fillRect(this.px, this.py, 2, 2);
+	}
+
+	function createParticles(){
+		for(var i = 0; i < particleNum; i++){
+			new Particle(particlesLeft, 0);
+			new Particle(particlesRight, CANVAS_WIDTH / 2);
+			particleIndex++;
+		}
+	}
+
+	function setAttractor(attractor){
+		/*
+		if attractor position is within (CANVAS_WIDTH/2 - 50, CANVAS_WIDTH/2 + 50),
+		then the attractors for left particles and right particles will be the same.
+		otherwise, set this attractor to be the attractor of the closer side, and
+		the other side's attractor will be the initial one.
+		*/
+		if(attractor.x >= CANVAS_WIDTH / 2 - 50 && attractor.x <= CANVAS_WIDTH / 2 + 50){
+			currentAttractorPosLeft = attractor;
+			currentAttractorPosRight = attractor;
+		}
+		else{
+			currentAttractorPosRight = attractor.x > CANVAS_WIDTH / 2 ? attractor : initialAttractorPosRight;
+			currentAttractorPosLeft = attractor.x < CANVAS_WIDTH / 2 ? attractor : initialAttractorPosLeft;
+		}
+	}
+
+	function main(){
+		//create canvas
+		var canvas = document.createElement("canvas");
+		canvas.width = CANVAS_WIDTH;
+		canvas.height = CANVAS_HEIGHT;
+		var context = canvas.getContext("2d");
+		document.body.appendChild(canvas);
+
+		//initialize canvas with black
+		context.fillStyle = "black";
+		context.fillRect(0,0,canvas.width,canvas.height);
+
+		createParticles();
+
+		//adding mouse event to reset attractor's position
+		canvas.addEventListener("mousemove", function(e){
+			var attractor = {x : e.pageX, y : e.pageY};
+			setAttractor(attractor);			
+		});
+
+		setInterval(function(){
+			//clear the canvas
+			context.fillStyle = "rgba(0,0,0,0.3)";
+			context.fillRect(0,0,canvas.width,canvas.height);
+			
+			particleColor = "hsla(" + Math.floor(Math.random()*360) + "," + (Math.random()*50 + 50) + "%," + (Math.random()*30 + 30) + "%, 1.0)"; 
+			for(var i in particlesLeft){
+				particlesLeft[i].addVelocity(currentAttractorPosLeft);
+				particlesLeft[i].detectCollision();
+				particlesLeft[i].draw(context);
+			}
+			for(var i in particlesRight){
+				particlesRight[i].addVelocity(currentAttractorPosRight);
+				particlesRight[i].detectCollision();
+				particlesRight[i].draw(context);
+			}
+		}, 33);
+		
+	};
+	</script>
+</head>
+
+<body onload="main()">
+	<!-- <canvas width="800" height="600"></canvas> -->
+</body>
+</html>

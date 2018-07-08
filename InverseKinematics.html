@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Inverse Kinematics</title>
+	<style type="text/css">
+		body{
+			margin: 0;
+			text-align: center;
+		}
+		#info{
+			position: absolute;
+			text-align: center;
+			padding: 10px;
+			width: 100%;
+		}
+	</style>
+</head>
+<body>
+	<div id="info">
+		<p>
+			Left side is inverse kinematics implemented with CCD,
+			Right side is inverse kinematics implemented with Jacobian.
+		</p>
+		<p>
+			Green square indicates mouse clicking position.
+		</p>
+	</div>
+	<canvas id="canvas"></canvas>
+
+	<script type="text/javascript" src="assets/math.min.js"></script>
+	<script type="text/javascript" src="assets/InverseKinematics.js"></script>
+</body>
+</html>
